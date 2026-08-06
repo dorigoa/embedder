@@ -50,7 +50,7 @@ def main():
               file=sys.stderr)
         return 1
 
-    print(f"device: {model.device}", file=sys.stderr)
+    #print(f"device: {model.device}", file=sys.stderr)
 
     with torch.inference_mode():
         # normalize_embeddings=True -> normalizzazione L2 fatta in torch, sul device
