@@ -8,8 +8,8 @@ from sentence_transformers import SentenceTransformer
 from huggingface_hub.utils import disable_progress_bars
 disable_progress_bars()
 
-#import os
-#os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
+import os
+os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
 
 MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
 MODEL = "Qwen/Qwen3-Embedding-0.6B"
