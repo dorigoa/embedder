@@ -5,7 +5,11 @@ import sys
 import torch
 from sentence_transformers import SentenceTransformer
 
+import os
+os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
+
 MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
+MODEL = "Qwen/Qwen3-Embedding-0.6B"
 
 def pick_device(requested=None):
     """Restituisce il device migliore disponibile, o quello richiesto se valido."""
@@ -35,7 +39,9 @@ def main():
 
     device = pick_device(args.device)
     try:
-        model = SentenceTransformer(MODEL, device=device)
+        model = SentenceTransformer(MODEL, 
+                                    device=device,
+                                    processor_kwargs={"padding_side": "left"},)
     except Exception as e:
         print(f"Errore nel caricamento del modello su '{device}': {e}",
               file=sys.stderr)
@@ -46,10 +52,13 @@ def main():
     with torch.inference_mode():
         # normalize_embeddings=True -> normalizzazione L2 fatta in torch, sul device
         # convert_to_tensor=True    -> nessun rientro in RAM CPU
-        emb = model.encode(corpus, convert_to_tensor=True,
+        emb = model.encode(corpus, 
+                           convert_to_tensor=True,
                            normalize_embeddings=True)
-        q = model.encode([args.sample], convert_to_tensor=True,
-                         normalize_embeddings=True)
+        q = model.encode([args.sample], 
+                         convert_to_tensor=True,
+                         normalize_embeddings=True,
+                         prompt_name="query")
         sims = (emb @ q.T).squeeze(1)          # coseno, essendo già normalizzati
         vals, idx = torch.sort(sims, descending=True)
 
