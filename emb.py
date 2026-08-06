@@ -7,6 +7,8 @@ from sentence_transformers import SentenceTransformer
 
 from huggingface_hub.utils import disable_progress_bars
 disable_progress_bars()
+from transformers.utils import logging as hf_logging
+hf_logging.disable_progress_bar()
 
 import os
 os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
