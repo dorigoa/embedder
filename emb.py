@@ -1,39 +1,62 @@
-# pip install sentence-transformers numpy
-
+#!/usr/bin/env python3
+# pip install sentence-transformers torch
 import argparse
-import numpy as np
+import sys
+import torch
 from sentence_transformers import SentenceTransformer
 
-usage = "ebmedder --words <word1[,word2[,word3...]]> --sample <sample word>"
+MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
 
-parser = argparse.ArgumentParser(usage=usage)
+def pick_device(requested=None):
+    """Restituisce il device migliore disponibile, o quello richiesto se valido."""
+    if requested:
+        return requested
+    if torch.cuda.is_available():
+        return "cuda"
+    if torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
 
-parser.add_argument(
-    "-W", "--words", type=str, dest="words", required=True, help="Mandatory argument: word to be embedded wrt the sample, can be a command separated list of words"
-)
-parser.add_argument(
-    "-s", "--sample", type=str, dest="sample", required=True, help="Word to be compared"
-)
+def main():
+    p = argparse.ArgumentParser(
+        usage="emb.py --words <w1[,w2,...]> --sample <parola>"
+    )
+    p.add_argument("-W", "--words", required=True,
+                   help="Lista di parole separate da virgola")
+    p.add_argument("-s", "--sample", required=True,
+                   help="Parola di confronto")
+    p.add_argument("-d", "--device", default="mps", required=False, choices=['cpu','mps','cuda'],
+                   help="Forza il device: cpu | mps | cuda (default: auto)")
+    args = p.parse_args()
 
-args = parser.parse_args()
+    corpus = [w.strip() for w in args.words.split(",") if w.strip()]
+    if not corpus:
+        p.error("--words non contiene parole valide")
 
-model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
+    device = pick_device(args.device)
+    try:
+        model = SentenceTransformer(MODEL, device=device)
+    except Exception as e:
+        print(f"Errore nel caricamento del modello su '{device}': {e}",
+              file=sys.stderr)
+        return 1
 
-corpus = [w.strip() for w in args.words.split(',') if w.strip()]
-if not corpus:
-    parser.error("--words non contiene parole valide")
+    print(f"device: {model.device}", file=sys.stderr)
 
-emb = model.encode(corpus, convert_to_numpy=True)
+    with torch.inference_mode():
+        # normalize_embeddings=True -> normalizzazione L2 fatta in torch, sul device
+        # convert_to_tensor=True    -> nessun rientro in RAM CPU
+        emb = model.encode(corpus, convert_to_tensor=True,
+                           normalize_embeddings=True)
+        q = model.encode([args.sample], convert_to_tensor=True,
+                         normalize_embeddings=True)
+        sims = (emb @ q.T).squeeze(1)          # coseno, essendo già normalizzati
+        vals, idx = torch.sort(sims, descending=True)
 
-emb = emb / np.linalg.norm(emb, axis=1, keepdims=True)
+    # unico trasferimento verso CPU: solo per stampare
+    for i, v in zip(idx.tolist(), vals.tolist()):
+        print(f"{corpus[i]:20s} {v:+.3f}")
+    return 0
 
-print("shape:", emb.shape)                       # (5, 384)
-print("norme:", np.linalg.norm(emb, axis=1))     # tutte ~1.0
-
-q = model.encode([args.sample], convert_to_numpy=True)
-q = q / np.linalg.norm(q)
-sims = emb @ q.T                                  # similarità coseno, in [-1, 1]
-
-ordine = np.argsort(-sims.ravel())
-for i in ordine:
-    print(f"{corpus[i]:20s} {sims[i,0]:.3f}")
+if __name__ == "__main__":
+    sys.exit(main())
