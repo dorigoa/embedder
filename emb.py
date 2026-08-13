@@ -40,9 +40,9 @@ logzero.formatter(formatter)
 
 
 def pick_device(requested=None):
-    """Auto-rileva il device migliore, o valida quello richiesto.
+    """Auto-detect del device che performa meglio.
 
-    Nota: i build PyTorch per ROCm (AMD) espongono le GPU tramite
+    Nota: PyTorch per ROCm (AMD) espone le GPU tramite
     l'API 'cuda', quindi 'cuda' copre sia NVIDIA che AMD.
     """
     if requested:
@@ -52,7 +52,7 @@ def pick_device(requested=None):
             "cpu":  lambda: True,
         }[requested]()
         if not available:
-            raise RuntimeError(f"device '{requested}' richiesto ma non disponibile")
+            raise RuntimeError(f"device '{requested}' requested is not available")
         return requested
 
     if torch.cuda.is_available():
@@ -68,18 +68,18 @@ def main():
         usage="emb.py --words <w1[,w2,...]> --sample <parola>"
     )
     p.add_argument("-w", "--words", required=True,
-                   help="Lista di parole separate da virgola da rank-are")
+                   help="Comma separated words to be ranked (corpus)")
     p.add_argument("-s", "--sample", required=True,
-                   help="Parola di confronto")
+                   help="Word to match against (sample)")
     p.add_argument("-d", "--device", default=None, required=False, choices=['cpu','mps','cuda'],
-                   help="Forza il device su cui runnare le operazioni matematiche")
+                   help="Force the device on which execute math operations")
     p.add_argument("-m", "--model", default="mini", required=False, choices=MODEL.keys(),
-                   help=f"Seleziona il modello da usare.")
+                   help=f"Select the model.")
     args = p.parse_args()
 
     corpus = [w.strip() for w in args.words.split(",") if w.strip()]
     if not corpus:
-        p.error("--words non contiene parole valide")
+        p.error("--words doesn't contain a valid list of command-separated words/sentences")
 
     try:
         device = pick_device(args.device)
