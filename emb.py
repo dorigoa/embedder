@@ -13,11 +13,13 @@ hf_logging.disable_progress_bar()
 import os
 os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
 
-MODEL = {'mini'  : "paraphrase-multilingual-MiniLM-L12-v2",
-         'qwen'  : "Qwen/Qwen3-Embedding-0.6B",
-         'gemma' : 'google/embeddinggemma-300m',
-         'mpnet' : 'paraphrase-multilingual-mpnet-base-v2',
-         'bge'   : 'BAAI/bge-m3' }
+MODEL = {'mini'   : "paraphrase-multilingual-MiniLM-L12-v2",
+         'qwen'   : "Qwen/Qwen3-Embedding-0.6B",
+         'gemma'  : 'google/embeddinggemma-300m',
+         'mpnet'  : 'paraphrase-multilingual-mpnet-base-v2',
+         'bge'    : 'BAAI/bge-m3',
+         'stella' : 'dunzhang/stella_en_1.5B_v5',
+         'qwen-4b': 'Qwen/Qwen3-Embedding-4B'  }
 
 
 # def pick_device(requested=None):
